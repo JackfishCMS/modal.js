@@ -1,4 +1,4 @@
-var jade = require('jade/lib/runtime.js')
+var jade = require('pug-runtime')
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
   attrs = attrs || jade.attrs
   escape = escape || jade.escape
