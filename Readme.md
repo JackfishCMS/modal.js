@@ -2,14 +2,16 @@
 
 A modal window for the browser.
 
-This module provides generic modal dialog functionality
+This module provides generic modal dialogue functionality
 for blocking the UI and obtaining user input.
 
 ## Note:
 
 You need to 'require' this module in a commonJS style environment, and
-you need to be able to require the things with the .jade extension. I use
-[browserify](https://github.com/substack/browserify) to do this.
+you need to be able to require the things with the .pug extension. I use
+[webpack + pug-loader](https://github.com/pugjs/pug-loader) to do this.
+
+This module supports pug@^3 with a shared runtime approach.
 
 ## Usage
 
@@ -35,7 +37,7 @@ modal([options])[.on('event')]
   set this to 'detach' so that bound event handlers on your content area aren't removed.
 
 Events will be fired on the modal according to which button is clicked.
-Defaults are confirm/cancel, but these can be overriden in your options.
+Defaults are confirm/cancel, but these can be overridden in your options.
 
 ### Example
 
