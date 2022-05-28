@@ -16,10 +16,8 @@
   "author": "Ben Gourley",
   "license": "ISC",
   "devDependencies": {
-    "jade": "~0.28.1",
-    "jsdom": "~0.5.0",
-    "mocha": "~1.8.1",
-    "jadeify2": "0.0.3",
-    "jquery": "~1.8.3"
+    "pug": "^3.0.2"
+  },
+  "dependencies": {
   }
 }
