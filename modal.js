@@ -1,6 +1,6 @@
 module.exports = modal
 
-var Emitter = require('events').EventEmitter
+var EventEmitter = require('events').EventEmitter
 var template = require('./modal-template')
 /**
  * @typedef {Object} ModalButton
@@ -45,59 +45,160 @@ var defaults = {
   fx: true // used for testing
 }
 
+/* Helper functions */
+function isFunctionWithArguments(fn) {
+  return fn.length > 0
+}
+
 /**
- * A shortcut method that will generate a new Modal object
+ * A shortcut method that will generate a new Modal instance
  * @param {ModalOptions} options
  */
 function modal(options) {
   return new Modal($.extend({}, defaults, options))
 }
-
 /**
- * A shortcut method that will generate a new Modal object
+ * A Modal class
  * @param {ModalOptions} settings
  */
-function Modal(settings) {
-  Emitter.call(this)
+class Modal extends EventEmitter {
+  constructor(settings) {
+    super()
 
-  var el = $(template(settings))
-  var modal = el.find('.js-modal')
-  var content = el.find('.js-content')
-  var buttons = el.find('.js-button')
-  var keys = {}
-  var transitionFn = $.fn.transition ? 'transition' : 'animate'
+    this.settings = settings
+    this.keyup = this.keyup.bind(this)
+    this.centre = this.centre.bind(this)
 
-  if (typeof settings.content === 'string') {
-    content.append($('<p/>', { text: settings.content }))
-  } else {
-    content.append(settings.content)
+    this.el = $(template(settings))
+    this.modal = this.el.find('.js-modal')
+    var content = this.el.find('.js-content')
+    var buttons = this.el.find('.js-button')
+    this.keys = {}
+    this.transitionFn = $.fn.transition ? 'transition' : 'animate'
+
+    if (typeof settings.content === 'string') {
+      content.append($('<p/>', { text: settings.content }))
+    } else {
+      content.append(settings.content)
+    }
+
+    this.modal.addClass(settings.className)
+
+    // Cache the button shortcut keycodes
+    $.each(
+      settings.buttons,
+      function (i, button) {
+        if (!button.keyCodes) return
+        $.each(
+          button.keyCodes,
+          function (n, keyCode) {
+            this.keys[keyCode + ''] = i
+          }.bind(this)
+        )
+      }.bind(this)
+    )
+
+    // Assign button event handlers
+    buttons.each(
+      $.proxy(function (i, el) {
+        $(el).on(
+          'click',
+          $.proxy(function () {
+            this.emit(settings.buttons[i].event)
+            this.removeModal()
+          }, this)
+        )
+      }, this)
+    )
+
+    $(document).on('keyup', this.keyup)
+
+    // Listen for clicks outside the modal
+    this.el.on(
+      'click',
+      $.proxy(function (e) {
+        if ($(e.target).is(this.el)) {
+          this.emit(settings.clickOutsideEvent)
+          // Clicks outside should close?
+          if (settings.clickOutsideToClose) {
+            this.removeModal()
+          }
+        }
+      }, this)
+    )
+
+    // Set initial styles
+    this.el.css({ opacity: 0 })
+    this.modal.css({ top: '0%' })
+
+    // Append to DOM
+    $('body').append(this.el)
+
+    // transition in
+    this.el[this.transitionFn]({ opacity: 1 }, settings.fx ? 100 : 0)
+
+    if (this.modal.outerHeight(true) < $(window).height()) {
+      var diff = $(window).height() - this.modal.outerHeight(true)
+      this.modal[this.transitionFn](
+        { top: diff / 2 + 10 },
+        settings.fx ? 200 : 0,
+        function () {
+          this.modal[this.transitionFn](
+            { top: diff / 2 },
+            settings.fx ? 150 : 0
+          )
+        }.bind(this)
+      )
+    }
+
+    $(window).on('resize', this.centre)
   }
-
-  modal.addClass(settings.className)
-
-  // Cache the button shortcut keycodes
-  $.each(settings.buttons, function (i, button) {
-    if (!button.keyCodes) return
-    $.each(button.keyCodes, function (n, keyCode) {
-      keys[keyCode + ''] = i
-    })
-  })
 
   /*
    * Reposition the modal in the middle of the screen
    */
-  function centre() {
-    if (modal.outerHeight(true) < $(window).height()) {
-      var diff = $(window).height() - modal.outerHeight(true)
-      modal.css({ top: diff / 2 })
+  centre() {
+    if (this.modal.outerHeight(true) < $(window).height()) {
+      var diff = $(window).height() - this.modal.outerHeight(true)
+      this.modal.css({ top: diff / 2 })
     }
   }
 
   /*
+   * Respond to a key event
+   */
+  keyup(e) {
+    var button = this.keys[e.keyCode + '']
+    if (typeof button !== 'undefined') {
+      this.emit(this.settings.buttons[button].event)
+      this.removeModal()
+    }
+  }
+
+  performRemoveModal() {
+    this.el[this.transitionFn]({ opacity: 0 }, this.settings.fx ? 200 : 0)
+    // Do setTimeout rather than using the transition
+    // callback as it potentially fails to get called in IE10
+    setTimeout(
+      function () {
+        this.el[this.settings.removeMethod]()
+      }.bind(this),
+      this.settings.fx ? 200 : 0
+    )
+    this.modal[this.transitionFn](
+      { top: $(window).height() },
+      this.settings.fx ? 200 : 0
+    )
+    this.emit('close')
+    this.removeAllListeners()
+    $(document).off('keyup', this.keyup)
+    $(window).off('resize', this.centre)
+  }
+  /**
    * Remove a modal from the DOM
    * and tear down its related events
    */
-  var removeModal = $.proxy(function () {
+  removeModal() {
     var listenersWithCallback = 0
 
     $.each(this.listeners('beforeClose'), function (i, fn) {
@@ -110,108 +211,17 @@ function Modal(settings) {
       var currentCallsCount = 0
       var performClose = function () {
         if (++currentCallsCount === listenersWithCallback) {
-          performRemoveModal()
+          this.performRemoveModal()
         }
-      }
+      }.bind(this)
       this.emit('beforeClose', performClose)
     } else {
       this.emit('beforeClose')
-      performRemoveModal()
+      this.performRemoveModal()
     }
-  }, this)
-
-  function isFunctionWithArguments(fn) {
-    return fn.length > 0
   }
 
-  var performRemoveModal = $.proxy(function () {
-    el[transitionFn]({ opacity: 0 }, settings.fx ? 200 : 0)
-    // Do setTimeout rather than using the transition
-    // callback as it potentially fails to get called in IE10
-    setTimeout(
-      function () {
-        el[settings.removeMethod]()
-      },
-      settings.fx ? 200 : 0
-    )
-    modal[transitionFn]({ top: $(window).height() }, settings.fx ? 200 : 0)
-    this.emit('close')
-    this.removeAllListeners()
-    $(document).off('keyup', keyup)
-    $(window).off('resize', centre)
-  }, this)
-
-  // Expose so you can control externally
-  this.close = function () {
-    removeModal()
+  close() {
+    this.removeModal()
   }
-
-  // Expose so you can recentre externally
-  this.centre = centre
-
-  /*
-   * Respond to a key event
-   */
-  var keyup = $.proxy(function (e) {
-    var button = keys[e.keyCode + '']
-    if (typeof button !== 'undefined') {
-      this.emit(settings.buttons[button].event)
-      removeModal()
-    }
-  }, this)
-
-  // Assign button event handlers
-  buttons.each(
-    $.proxy(function (i, el) {
-      $(el).on(
-        'click',
-        $.proxy(function () {
-          this.emit(settings.buttons[i].event)
-          removeModal()
-        }, this)
-      )
-    }, this)
-  )
-
-  $(document).on('keyup', keyup)
-
-  // Listen for clicks outside the modal
-  el.on(
-    'click',
-    $.proxy(function (e) {
-      if ($(e.target).is(el)) {
-        this.emit(settings.clickOutsideEvent)
-        // Clicks outside should close?
-        if (settings.clickOutsideToClose) {
-          removeModal()
-        }
-      }
-    }, this)
-  )
-
-  // Set initial styles
-  el.css({ opacity: 0 })
-  modal.css({ top: '0%' })
-
-  // Append to DOM
-  $('body').append(el)
-
-  // transition in
-  el[transitionFn]({ opacity: 1 }, settings.fx ? 100 : 0)
-
-  if (modal.outerHeight(true) < $(window).height()) {
-    var diff = $(window).height() - modal.outerHeight(true)
-    modal[transitionFn](
-      { top: diff / 2 + 10 },
-      settings.fx ? 200 : 0,
-      function () {
-        modal[transitionFn]({ top: diff / 2 }, settings.fx ? 150 : 0)
-      }
-    )
-  }
-
-  $(window).on('resize', centre)
 }
-
-// Be an emitter
-Modal.prototype = Emitter.prototype
