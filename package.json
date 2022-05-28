@@ -5,7 +5,8 @@
   "main": "modal.js",
   "scripts": {
     "pretest": "eslint -f unix . && pug-lint .",
-    "test": "mocha -R spec test"
+    "test": "mocha -R spec test",
+    "run-test": "mocha "
   },
   "publishConfig": {
     "registry": "http://registry.npmjs.org/"
