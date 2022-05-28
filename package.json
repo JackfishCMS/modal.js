@@ -6,7 +6,9 @@
   "scripts": {
     "pretest": "eslint -f unix . && pug-lint .",
     "test": "mocha -R spec test",
-    "run-test": "mocha "
+    "run-test": "mocha ",
+    "build": "node compile-template.js",
+    "prepublishOnly": "yarn test && yarn build"
   },
   "publishConfig": {
     "registry": "http://registry.npmjs.org/"
