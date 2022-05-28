@@ -45,4 +45,4 @@ pug_html = pug_html + "\u003C\u002Fdiv\u003E\u003C\u002Fdiv\u003E";
         locals_for_with.title :
         typeof title !== 'undefined' ? title : undefined));
     ;;return pug_html;}
-module.exports = template
+module.exports = template;
