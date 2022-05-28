@@ -193,6 +193,7 @@ class Modal extends EventEmitter {
     $(document).off('keyup', this.keyup)
     $(window).off('resize', this.centre)
   }
+
   /**
    * Remove a modal from the DOM
    * and tear down its related events

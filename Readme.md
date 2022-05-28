@@ -15,7 +15,8 @@ This module supports pug@^3 with a shared runtime approach.
 
 ## Usage
 
-```
+```js
+const modal = require('@jackfish/modal')
 modal([options])[.on('event')]
 ```
 
