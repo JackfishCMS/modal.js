@@ -41,37 +41,41 @@ module.exports = modal
  *     .on('confirm', deleteItem)
  */
 
-var Emitter = require('events').EventEmitter
-  , template = require('./modal-template')
-
-  , defaults =
-    { title: 'Are you sure?'
-    , content: 'Please confirm this action.'
-    , buttons:
-      [ { text: 'Cancel', event: 'cancel', className: '', iconClassName: '', keyCodes: [ 27 ] }
-      , { text: 'Confirm', event: 'confirm', className: '', iconClassName: '' }
-      ]
-    , clickOutsideToClose: true
-    , clickOutsideEvent: 'cancel'
-    , className: ''
-    , removeMethod: 'remove'
-    , fx: true // used for testing
-    }
+var Emitter = require('events').EventEmitter,
+  template = require('./modal-template'),
+  defaults = {
+    title: 'Are you sure?',
+    content: 'Please confirm this action.',
+    buttons: [
+      {
+        text: 'Cancel',
+        event: 'cancel',
+        className: '',
+        iconClassName: '',
+        keyCodes: [27]
+      },
+      { text: 'Confirm', event: 'confirm', className: '', iconClassName: '' }
+    ],
+    clickOutsideToClose: true,
+    clickOutsideEvent: 'cancel',
+    className: '',
+    removeMethod: 'remove',
+    fx: true // used for testing
+  }
 
 function modal(options) {
   return new Modal($.extend({}, defaults, options))
 }
 
 function Modal(settings) {
-
   Emitter.call(this)
 
-  var el = $(template(settings))
-    , modal = el.find('.js-modal')
-    , content = el.find('.js-content')
-    , buttons = el.find('.js-button')
-    , keys = {}
-    , transitionFn = $.fn.transition ? 'transition' : 'animate'
+  var el = $(template(settings)),
+    modal = el.find('.js-modal'),
+    content = el.find('.js-content'),
+    buttons = el.find('.js-button'),
+    keys = {},
+    transitionFn = $.fn.transition ? 'transition' : 'animate'
 
   if (typeof settings.content === 'string') {
     content.append($('<p/>', { text: settings.content }))
@@ -106,15 +110,15 @@ function Modal(settings) {
   var removeModal = $.proxy(function () {
     var listenersWithCallback = 0
 
-    $.each(this.listeners('beforeClose'), function(i, fn) {
+    $.each(this.listeners('beforeClose'), function (i, fn) {
       if (isFunctionWithArguments(fn)) {
         listenersWithCallback++
       }
     })
 
     if (listenersWithCallback > 0) {
-      var currentCallsCount = 0
-        , performClose = function() {
+      var currentCallsCount = 0,
+        performClose = function () {
           if (++currentCallsCount === listenersWithCallback) {
             performRemoveModal()
           }
@@ -134,9 +138,12 @@ function Modal(settings) {
     el[transitionFn]({ opacity: 0 }, settings.fx ? 200 : 0)
     // Do setTimeout rather than using the transition
     // callback as it potentially fails to get called in IE10
-    setTimeout(function () {
-      el[settings.removeMethod]()
-    }, settings.fx ? 200 : 0)
+    setTimeout(
+      function () {
+        el[settings.removeMethod]()
+      },
+      settings.fx ? 200 : 0
+    )
     modal[transitionFn]({ top: $(window).height() }, settings.fx ? 200 : 0)
     this.emit('close')
     this.removeAllListeners()
@@ -145,7 +152,7 @@ function Modal(settings) {
   }, this)
 
   // Expose so you can control externally
-  this.close = function() {
+  this.close = function () {
     removeModal()
   }
 
@@ -164,25 +171,33 @@ function Modal(settings) {
   }, this)
 
   // Assign button event handlers
-  buttons.each($.proxy(function (i, el) {
-    $(el).on('click', $.proxy(function () {
-      this.emit(settings.buttons[i].event)
-      removeModal()
-    }, this))
-  }, this))
+  buttons.each(
+    $.proxy(function (i, el) {
+      $(el).on(
+        'click',
+        $.proxy(function () {
+          this.emit(settings.buttons[i].event)
+          removeModal()
+        }, this)
+      )
+    }, this)
+  )
 
   $(document).on('keyup', keyup)
 
   // Listen for clicks outside the modal
-  el.on('click', $.proxy(function (e) {
-    if ($(e.target).is(el)) {
-      this.emit(settings.clickOutsideEvent)
-      // Clicks outside should close?
-      if (settings.clickOutsideToClose) {
-        removeModal()
+  el.on(
+    'click',
+    $.proxy(function (e) {
+      if ($(e.target).is(el)) {
+        this.emit(settings.clickOutsideEvent)
+        // Clicks outside should close?
+        if (settings.clickOutsideToClose) {
+          removeModal()
+        }
       }
-    }
-  }, this))
+    }, this)
+  )
 
   // Set initial styles
   el.css({ opacity: 0 })
@@ -196,13 +211,16 @@ function Modal(settings) {
 
   if (modal.outerHeight(true) < $(window).height()) {
     var diff = $(window).height() - modal.outerHeight(true)
-    modal[transitionFn]({ top: (diff / 2) + 10 }, settings.fx ? 200 : 0, function () {
-      modal[transitionFn]({ top: diff / 2 }, settings.fx ? 150 : 0)
-    })
+    modal[transitionFn](
+      { top: diff / 2 + 10 },
+      settings.fx ? 200 : 0,
+      function () {
+        modal[transitionFn]({ top: diff / 2 }, settings.fx ? 150 : 0)
+      }
+    )
   }
 
   $(window).on('resize', centre)
-
 }
 
 // Be an emitter
