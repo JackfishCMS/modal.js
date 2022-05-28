@@ -3,7 +3,7 @@
     if (title)
       h1.modal-title #{title}
     .js-content
-    if (buttons.length)
+    if (buttons && buttons.length)
       .modal-controls
         each button in buttons
           button.js-button(class=button.className)
