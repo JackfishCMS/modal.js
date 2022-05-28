@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended"
+  ],
+
+  "plugins": ["prettier"],
+
+  "env": {
+    "es6": true,
+    "node": true,
+    "mocha": true,
+    "jquery": true,
+    "browser": true
+  },
+
+  "globals": {
+    "jQuery": true,
+    "$": true
+  },
+
+  "rules": {
+    "semi": ["error", "never"],
+    "comma-dangle": ["error", "never"]
+  }
+}
