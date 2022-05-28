@@ -100,23 +100,21 @@ class Modal extends EventEmitter {
 
     // Assign button event handlers
     buttons.each(
-      $.proxy(function (i, el) {
+      function (i, el) {
         $(el).on(
           'click',
-          $.proxy(function () {
+          function () {
             this.emit(settings.buttons[i].event)
             this.removeModal()
-          }, this)
+          }.bind(this)
         )
-      }, this)
+      }.bind(this)
     )
-
-    $(document).on('keyup', this.keyup)
 
     // Listen for clicks outside the modal
     this.el.on(
       'click',
-      $.proxy(function (e) {
+      function (e) {
         if ($(e.target).is(this.el)) {
           this.emit(settings.clickOutsideEvent)
           // Clicks outside should close?
@@ -124,7 +122,7 @@ class Modal extends EventEmitter {
             this.removeModal()
           }
         }
-      }, this)
+      }.bind(this)
     )
 
     // Set initial styles
@@ -151,6 +149,7 @@ class Modal extends EventEmitter {
       )
     }
 
+    $(document).on('keyup', this.keyup)
     $(window).on('resize', this.centre)
   }
 
