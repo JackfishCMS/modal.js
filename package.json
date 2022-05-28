@@ -14,9 +14,6 @@
     "build": "node compile-template.js",
     "prepublishOnly": "yarn test && yarn build"
   },
-  "publishConfig": {
-    "registry": "http://registry.npmjs.org/"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/JackfishCMS/modal.js.git"
