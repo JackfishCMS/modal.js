@@ -1,81 +1,71 @@
 module.exports = modal
 
-/*
- * This module provides generic modal dialog functionality
- * for blocking the UI and obtaining user input.
- *
- * Usage:
- *
- *   modal([options])
- *     [.on('event')]...
- *
- *   options:
- *     - title (string)
- *     - content (jQuery DOM element / raw string)
- *     - buttons (array)
- *       - text (string) the button text
- *       - event (string) the event name to fire when the button is clicked
- *       - className (string) the className to apply to the button
- *       - iconClassName (string) adds an `i` element before button text with the given class(es)
- *       - keyCodes ([numbers]) the keycodes of shortcut keys for the button
- *     - clickOutsideToClose (boolean) whether a click event outside of the modal should close it
- *     - clickOutsideEvent (string) the name of the event to be triggered on clicks outside of the modal
- *     - className (string) optional class to apply to the modal element
- *     - removeMethod (string) which jQuery method to remove the modal contents with (default: remove)
- *         This is useful when you want to append the contents to the DOM again later. In which case
- *         set this to 'detach' so that bound event handlers aren't removed.
- *
- *  Events will be fired on the modal according to which button is clicked.
- *  Defaults are confirm/cancel, but these can be overriden in your options.
- *
- *  Example:
- *
- *   modal(
- *     { title: 'Delete object'
- *     , content: 'Are you sure you want to delete this object?'
- *     , buttons:
- *       [ { text: 'Don’t delete', event: 'cancel' }
- *       , { text: 'Delete', event: 'confirm', className: 'button-danger', iconClassName: 'icon-delete' }
- *       ]
- *     })
- *     .on('confirm', deleteItem)
+var Emitter = require('events').EventEmitter
+var template = require('./modal-template')
+/**
+ * @typedef {Object} ModalButton
+ * @property {string} text The button text
+ * @property {string} event The event name to fire when the button is clicked
+ * @property {string} [className] The className to apply to the button
+ * @property {string} [iconClassName] If set, adds an `i` element before button text with the given class(es)
+ * @property {number[]} [keyCodes] The keycodes of shortcut keys for the button
  */
 
-var Emitter = require('events').EventEmitter,
-  template = require('./modal-template'),
-  defaults = {
-    title: 'Are you sure?',
-    content: 'Please confirm this action.',
-    buttons: [
-      {
-        text: 'Cancel',
-        event: 'cancel',
-        className: '',
-        iconClassName: '',
-        keyCodes: [27]
-      },
-      { text: 'Confirm', event: 'confirm', className: '', iconClassName: '' }
-    ],
-    clickOutsideToClose: true,
-    clickOutsideEvent: 'cancel',
-    className: '',
-    removeMethod: 'remove',
-    fx: true // used for testing
-  }
+/**
+ * @typedef {Object} ModalOptions
+ * @property {string} [title] The modal title
+ * @property {HTMLElement | string} [content] The modal content
+ * @property {ModalButton[]} [buttons] The modal buttons
+ * @property {boolean} [clickOutsideToClose] Whether a click event outside of the modal should close it
+ * @property {string} [clickOutsideEvent] The name of the event to be triggered on clicks outside of the modal
+ * @property {string} [className] Class to apply to the modal element
+ * @property {string} [removeMethod] which jQuery method to remove the modal contents with (default: remove)
+ *         This is useful when you want to append the contents to the DOM again later. In which case
+ *         set this to 'detach' so that bound event handlers aren't removed.
+ */
 
+/** @type {ModalOptions} */
+var defaults = {
+  title: 'Are you sure?',
+  content: 'Please confirm this action.',
+  buttons: [
+    {
+      text: 'Cancel',
+      event: 'cancel',
+      className: '',
+      iconClassName: '',
+      keyCodes: [27]
+    },
+    { text: 'Confirm', event: 'confirm', className: '', iconClassName: '' }
+  ],
+  clickOutsideToClose: true,
+  clickOutsideEvent: 'cancel',
+  className: '',
+  removeMethod: 'remove',
+  fx: true // used for testing
+}
+
+/**
+ * A shortcut method that will generate a new Modal object
+ * @param {ModalOptions} options
+ */
 function modal(options) {
   return new Modal($.extend({}, defaults, options))
 }
 
+/**
+ * A shortcut method that will generate a new Modal object
+ * @param {ModalOptions} settings
+ */
 function Modal(settings) {
   Emitter.call(this)
 
-  var el = $(template(settings)),
-    modal = el.find('.js-modal'),
-    content = el.find('.js-content'),
-    buttons = el.find('.js-button'),
-    keys = {},
-    transitionFn = $.fn.transition ? 'transition' : 'animate'
+  var el = $(template(settings))
+  var modal = el.find('.js-modal')
+  var content = el.find('.js-content')
+  var buttons = el.find('.js-button')
+  var keys = {}
+  var transitionFn = $.fn.transition ? 'transition' : 'animate'
 
   if (typeof settings.content === 'string') {
     content.append($('<p/>', { text: settings.content }))
@@ -117,12 +107,12 @@ function Modal(settings) {
     })
 
     if (listenersWithCallback > 0) {
-      var currentCallsCount = 0,
-        performClose = function () {
-          if (++currentCallsCount === listenersWithCallback) {
-            performRemoveModal()
-          }
+      var currentCallsCount = 0
+      var performClose = function () {
+        if (++currentCallsCount === listenersWithCallback) {
+          performRemoveModal()
         }
+      }
       this.emit('beforeClose', performClose)
     } else {
       this.emit('beforeClose')
