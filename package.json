@@ -4,6 +4,7 @@
   "description": "A modal window for the browser.",
   "main": "modal.js",
   "scripts": {
+    "pretest": "eslint -f unix . && pug-lint .",
     "test": "mocha -R spec test"
   },
   "publishConfig": {
