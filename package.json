@@ -3,6 +3,7 @@
   "version": "1.2.0",
   "description": "A modal window for the browser.",
   "main": "modal.js",
+  "files": ["modal.js", "modal-template.js"],
   "scripts": {
     "pretest": "eslint -f unix . && pug-lint .",
     "test": "mocha -R spec test",
